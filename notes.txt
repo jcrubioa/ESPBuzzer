@@ -1,0 +1,3 @@
+gotify
+curl.exe  "http://localhost:80/message?token=AfP6Am7whDrhw5d" -F "title=my title" -F "message=hola" -F "priority=10"
+
