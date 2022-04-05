@@ -73,30 +73,6 @@ String WifiHTML(){
   return ptr;
 }
 
-String TelegramHTML(){
-  String ptr = "<!DOCTYPE HTML><html><body>\n";
-  if (String(persistentData.telegramBot) != "") {
-    ptr += "<h2>Token de Telegram Bot actual: \"" + String(persistentData.telegramBot) + "\"</h2>\n";
-    ptr += "<h2>Chat ID de Telegram Bot actual: \"" + String(persistentData.telegramChatID) + "\"</h2>\n";
-  } else {
-    ptr += "<h2>No se ha configurado un token para Telegram Bot</h2>\n";
-  }
-
-  ptr += "<form action=\"/telegram/get\"> \n";
-  ptr += "Bot Token:<br>\n";
-  ptr += "<input type=\"text\" name=\"telegramBot\" value=\"" + String(persistentData.telegramBot) + "\"> \n";
-  ptr += "<br>\n";
-  ptr += "Chat ID:<br>\n";
-  ptr += "<input type=\"text\" name=\"telegramChatID\" value=\"" + String(persistentData.telegramChatID) + "\"> \n";
-  ptr += "<br><br>\n";
-  ptr += "<input type=\"submit\" value=\"Submit\"> \n";
-  ptr += "</form> \n";
-  ptr += "<br><br>\n";
-  ptr += "<a href=\"/\">Regresar al inicio</a> \n";
-  ptr += "</body></html> \n";
-  return ptr;
-}
-
 String GotifyHTML(){
   String ptr = "<!DOCTYPE HTML><html><body>\n";
   ptr += "<h2>Configuracion de Gotify</h2>\n";
@@ -146,29 +122,12 @@ String devicePropertiesHTML(){
   String ptr = "<!DOCTYPE HTML><html><body>\n";
   ptr += "<h2>Configuracion del Dispositivo</h2>\n";
   
-  ptr += "<form action=\"/deviceProperties/get\"> \n";
-  ptr += "Segundos de inactividad cuando se detecta cliente que entra:<br>\n";
-  ptr += "<input type=\"text\" name=\"clientInCoolDownSeconds\" value=\"" + String(persistentData.clientInCoolDownSeconds) + "\"> \n";
-  ptr += "<br>\n";
-  
-  ptr += "Milisegundos de inactividad cuando se detecta cliente que sale:<br>\n";
-  ptr += "<input type=\"text\" name=\"clientOutCoolDownMs\" value=\"" + String(persistentData.clientOutCoolDownMs) + "\"> \n";
-  ptr += "<br>\n";
-
-  ptr += "Milisegundos de tasa de refresco de lectura de los sensores:<br>\n";
-  ptr += "<input type=\"text\" name=\"sensorRefreshRateMs\" value=\"" + String(persistentData.sensorRefreshRateMs) + "\"> \n";
-  ptr += "<br>\n";
-
   ptr += "Segundos para ignorar la hora de dormir (Util para configurar el dispositivo):<br>\n";
   ptr += "<input type=\"text\" name=\"wakeUntilSleepSeconds\" value=\"" + String(persistentData.wakeUntilSleepSeconds) + "\"> \n";
   ptr += "<br>\n";
 
   ptr += "Segundos para esperar que se establezca la conexion WiFi:<br>\n";
   ptr += "<input type=\"text\" name=\"wifiTimeoutSeconds\" value=\"" + String(persistentData.wifiTimeoutSeconds) + "\"> \n";
-  ptr += "<br>\n";
-
-  ptr += "Centimetros para detectar obstaculo:<br>\n";
-  ptr += "<input type=\"text\" name=\"lengthRangeCm\" value=\"" + String(persistentData.lengthRangeCm) + "\"> \n";
   ptr += "<br>\n";
 
   ptr += "Debug mode:<br>\n";

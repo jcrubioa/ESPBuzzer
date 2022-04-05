@@ -1,14 +1,12 @@
-
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
-
+#include <tiny_websockets/message.hpp>
+#include <tiny_websockets/client.hpp>
 HTTPClient http;
 
 String resolveServer(String hostname){
   for(int i =0; i < 10; i++){
     IPAddress answer = MDNS.queryHost(hostname);
-    Serial.println(hostname);
-    Serial.println(answer);
     if(answer.toString() == "0.0.0.0") {
       delay(250);
       continue;
@@ -18,17 +16,6 @@ String resolveServer(String hostname){
   }
   Serial.println("Failed fetching mdns");
   return "";
-}
-
-void message_to_telegram(String message)
-{
-  if (sleeping == 0){
-    client.setCACert(TELEGRAM_CERTIFICATE_ROOT);
-    //adding all number, your api key, your message into one complete url
-    bot->sendMessage(String(persistentData.telegramChatID), message, "");
-  } else {
-    Serial.println("Notification silenced due to sleep hours: " + message);
-  }
 }
 
 void message_to_gotify(String message)
@@ -64,6 +51,4 @@ void message_to_gotify(String message)
 void notify(String message){
   if (MESSAGING_SYSTEM == 0)
     message_to_gotify(message);
-  else if (MESSAGING_SYSTEM == 1)
-    message_to_telegram(message);
 }

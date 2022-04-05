@@ -21,30 +21,6 @@ void handle_WifiSubmit() {
   esp_restart();
 }
 
-void handle_TelegramSubmit() {
-  String input_telegramBot;
-  String input_telegramChatID;
-
-  input_telegramBot = server.arg("telegramBot");
-  input_telegramChatID = server.arg("telegramChatID");
-
-
-  Serial.print("Telegram Bot token: ");
-  Serial.println(input_telegramBot);
-  Serial.print("Telegram Bot chat ID: ");
-  Serial.println(input_telegramChatID);
-
-  strcpy(persistentData.telegramBot, input_telegramBot.c_str());
-  strcpy(persistentData.telegramChatID, input_telegramChatID.c_str());
-
-  EEPROM.put(0, persistentData);
-  EEPROM.commit();
-  
-  server.send(200, "text/html", "Telegram Bot configurado Token(\"" + input_telegramBot + "\") Chat ID(\"" + input_telegramChatID + "\")<br><a href=\"/\">Regresar al inicio</a>");
-  delay(500);
-  esp_restart();
-}
-
 void handle_GotifySubmit() {
   String input_gotifyHost;
   String input_gotifyToken;
@@ -103,43 +79,23 @@ void handle_TimerSubmit() {
 }
 
 void handle_DevicePropertiesSubmit() {
-  String input_clientInCoolDownSeconds;
-  String input_clientOutCoolDownMs;
-  String input_sensorRefreshRateMs;
   String input_wakeUntilSleepSeconds;
   String input_wifiTimeoutSeconds;
-  String input_lengthRangeCm;
   String input_debugMode;
 
-  input_clientInCoolDownSeconds = server.arg("clientInCoolDownSeconds");
-  input_clientOutCoolDownMs = server.arg("clientOutCoolDownMs");
-  input_sensorRefreshRateMs = server.arg("sensorRefreshRateMs");
   input_wakeUntilSleepSeconds = server.arg("wakeUntilSleepSeconds");
   input_wifiTimeoutSeconds = server.arg("wifiTimeoutSeconds");
-  input_lengthRangeCm = server.arg("lengthRangeCm");
   input_debugMode = server.arg("debugMode");
 
-  Serial.print("clientInCoolDownSeconds: ");
-  Serial.println(input_clientInCoolDownSeconds);
-  Serial.print("clientOutCoolDownMs: ");
-  Serial.println(input_clientOutCoolDownMs);
-  Serial.print("sensorRefreshRateMs: ");
-  Serial.println(input_sensorRefreshRateMs);
   Serial.print("wakeUntilSleepSeconds: ");
   Serial.println(input_wakeUntilSleepSeconds);
   Serial.print("wifiTimeoutSeconds: ");
   Serial.println(input_wifiTimeoutSeconds);
-  Serial.print("lengthRangeCm: ");
-  Serial.println(input_lengthRangeCm);
   Serial.print("debugMode: ");
   Serial.println(input_debugMode);
 
-  persistentData.clientInCoolDownSeconds = atoi(input_clientInCoolDownSeconds.c_str());
-  persistentData.clientOutCoolDownMs = atoi(input_clientOutCoolDownMs.c_str());
-  persistentData.sensorRefreshRateMs = atoi(input_sensorRefreshRateMs.c_str());
   persistentData.wakeUntilSleepSeconds = atoi(input_wakeUntilSleepSeconds.c_str());
   persistentData.wifiTimeoutSeconds = atoi(input_wifiTimeoutSeconds.c_str());
-  persistentData.lengthRangeCm = atoi(input_lengthRangeCm.c_str());
   persistentData.debugMode = atoi(input_debugMode.c_str());
   
 
@@ -159,11 +115,6 @@ void handle_OnConnect() {
 void handle_OnWifi() {
   Serial.println("Client connected to wifi conf");
   server.send(200, "text/html", WifiHTML());
-}
-
-void handle_OnTelegram() {
-  Serial.println("Client connected to Telegram conf");
-  server.send(200, "text/html", TelegramHTML());
 }
 
 void handle_OnGotify() {

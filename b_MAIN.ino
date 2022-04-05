@@ -1,20 +1,41 @@
 #include "EEPROM.h"
 #include <WebServer.h>
+#include <ArduinoWebsockets.h>
+#include <tiny_websockets/client.hpp>
 #include <WiFi.h>
-#include <WiFiUdp.h>
-#include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
 #include <Update.h>
 #include <ESPmDNS.h>
+
+using namespace websockets;
+
+void onMessageCallback(WebsocketsMessage message) {
+    Serial.print("Got Message: ");
+    Serial.println(message.data());
+}
+
+using namespace websockets;
+void onEventsCallback(WebsocketsEvent event, String data) {
+    if(event == WebsocketsEvent::ConnectionOpened) {
+        Serial.println("Connnection Opened");
+    } else if(event == WebsocketsEvent::ConnectionClosed) {
+        Serial.println("Connnection Closed");
+    } else if(event == WebsocketsEvent::GotPing) {
+        Serial.println("Got a Ping!");
+    } else if(event == WebsocketsEvent::GotPong) {
+        Serial.println("Got a Pong!");
+    }
+}
+
+WebsocketsClient wsclient;
+
+
+#define BUZZZER_PIN  18
 
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = -18000;
 
 String gotifyIP;
-
-WiFiUDP udp;
-WiFiClientSecure client;
-
 UniversalTelegramBot *bot;
 
 unsigned long lastClientGotInTs;
@@ -28,14 +49,25 @@ int in = 0;
 unsigned long start;
 WebServer server(80);
 
+
 void setup() {
   start = millis();
   lastClientGotInTs = 0;
   lastClientGotOutTs = 0;
-  pinMode(trigPin1, OUTPUT); // Sets the trigPin as an Output
-  pinMode(echoPin1, INPUT); // Sets the echoPin as an Input
-  pinMode(trigPin2, OUTPUT); // Sets the trigPin as an Output
-  pinMode(echoPin2, INPUT); // Sets the echoPin as an Input
+  pinMode(BUZZZER_PIN, OUTPUT); // Sets the trigPin as an Output
+
+  digitalWrite(BUZZZER_PIN, HIGH);
+  delay(300);
+  digitalWrite(BUZZZER_PIN, LOW);
+  delay(50);
+  digitalWrite(BUZZZER_PIN, HIGH);
+  delay(300);
+  digitalWrite(BUZZZER_PIN, LOW);
+  delay(50);
+  digitalWrite(BUZZZER_PIN, HIGH);
+  delay(300);
+  digitalWrite(BUZZZER_PIN, LOW);
+  
   Serial.begin(115200);
 
   if (!EEPROM.begin(EEPROM_SIZE)) {
@@ -66,25 +98,14 @@ void setup() {
   Serial.println("Password read: " + String(persistentData.password));
   Serial.println("Gotify URL read: " + String(persistentData.gotifyHost));
   Serial.println("Gotify Token read: " + String(persistentData.gotifyToken));
-  Serial.println("Telegram Bot Token read: " + String(persistentData.telegramBot));
-  Serial.println("Telegram Bot chat ID read: " + String(persistentData.telegramChatID));
   Serial.println("Time to sleep read: " + String(persistentData.sleepTime));
   Serial.println("Time to wakeup read: " + String(persistentData.wakeupTime));
-  Serial.print("clientInCoolDownSeconds: ");
-  Serial.println(persistentData.clientInCoolDownSeconds);
-  Serial.print("clientOutCoolDownMs: ");
-  Serial.println(persistentData.clientOutCoolDownMs);
-  Serial.print("sensorRefreshRateMs: ");
-  Serial.println(persistentData.sensorRefreshRateMs);
-  Serial.print("wakeUntilSleepSecondsonds: ");
   Serial.println(persistentData.wakeUntilSleepSeconds);
   Serial.print("wifiTimeoutSeconds: ");
   Serial.println(persistentData.wifiTimeoutSeconds);
   Serial.print("debugMode: ");
   Serial.println(persistentData.debugMode);
 
-
-  bot = new UniversalTelegramBot (persistentData.telegramBot, client);
   if (String(persistentData.ssid) != "" && String(persistentData.gotifyHost) != "" && String(persistentData.gotifyToken)) {
     int secondsPassed = 0;
     Serial.println("Wifi connecting.");
@@ -116,14 +137,36 @@ void setup() {
       Serial.println("Connected to the WiFi network"); // Print wifi connect message
       Serial.println(WiFi.localIP());
       configTime(gmtOffset_sec, 0, ntpServer);
-      if(!MDNS.begin("esp32")) {
+      if(!MDNS.begin("espBuzzer")) {
         Serial.println("Error starting mDNS");
       }
 
       gotifyIP = resolveServer(persistentData.gotifyHost);
       if (gotifyIP == "")
         esp_restart();
-      notify("Usa esta direccion para configurar el dispositivo: " + ip2Str(WiFi.localIP()));
+
+      // run callback when messages are received
+      wsclient.onMessage(onMessageCallback);
+      
+      // run callback when events are occuring
+      wsclient.onEvent(onEventsCallback);
+    
+      // Connect to server
+      wsclient.setInsecure();
+      String wsURL = "ws://" + gotifyIP + ":80/stream?token=CZ2KYR.mSekO4HB";
+      bool connected = wsclient.connect(wsURL);
+      Serial.println("WS url: " + wsURL);
+      if (connected) 
+      {
+        Serial.println("Connected!");
+        String WS_msg = String("Hello to Server");
+        wsclient.send(WS_msg);
+      }
+      else 
+      {
+        Serial.println("Not Connected!");
+      }
+      notify("Usa esta direccion para configurar el dispositivo Buzzer: " + ip2Str(WiFi.localIP()));
     }
   }
   if (operationMode == 0) {
@@ -143,11 +186,9 @@ void setup() {
   }
   server.on("/", handle_OnConnect);
   server.on("/wifi", handle_OnWifi);
-  server.on("/telegram", handle_OnTelegram);
   server.on("/timer", handle_OnTimer);
   server.on("/gotify", handle_OnGotify);
   server.on("/wifi/get", handle_WifiSubmit);
-  server.on("/telegram/get", handle_TelegramSubmit);
   server.on("/timer/get", handle_TimerSubmit);
   server.on("/gotify/get", handle_GotifySubmit);
   server.on("/devicePropertiesHTML", handle_OnDeviceProperties);
@@ -171,34 +212,8 @@ void loop() {
   
   if (operationMode == 1 && !(finish - start >= persistentData.wakeUntilSleepSeconds * 1000 || sleeping)) {
     if (WiFi.status() == WL_CONNECTED) {
-      //int leftDistance = readDistance(trigPin2, echoPin2);
-      int rightDistance = readDistance(trigPin1, echoPin1);
-      int leftDistance = 55;
-      if (persistentData.debugMode == 1){
-        Serial.print("Left ");
-        Serial.println(leftDistance);
-        Serial.print("Right ");
-        Serial.println(rightDistance);
-      }
-
-      if(rightDistance < 110)
-        notify("Ha llegado un cliente " + String(rightDistance));
-      
-      unsigned long currentTime = millis();
-      if (leftDistance < persistentData.lengthRangeCm && rightDistance > leftDistance && currentTime - lastClientGotInTs >= persistentData.clientInCoolDownSeconds * 1000 && currentTime - lastClientGotOutTs >= persistentData.clientOutCoolDownMs) {
-        in++;
-        if (in >= 2){
-          Serial.println("Client got in");
-            if (persistentData.debugMode == 0)
-              notify("Ha llegado un cliente");
-            lastClientGotInTs = millis();
-            in = 0;
-        }
-      } else if (rightDistance < persistentData.lengthRangeCm && leftDistance >= persistentData.lengthRangeCm && currentTime - lastClientGotInTs >= persistentData.clientInCoolDownSeconds * 1000) {
-        Serial.println("Client got out");
-        lastClientGotOutTs = millis();
-      }
-      delay(persistentData.sensorRefreshRateMs);
+        wsclient.poll();
+      delay(500);
     } else {
       reconnect();
     }
