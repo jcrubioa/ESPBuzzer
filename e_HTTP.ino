@@ -23,24 +23,29 @@ void handle_WifiSubmit() {
 
 void handle_GotifySubmit() {
   String input_gotifyHost;
-  String input_gotifyToken;
+  String input_gotifyAppToken;
+  String input_gotifyClientToken;
 
   input_gotifyHost = server.arg("gotifyHost");
-  input_gotifyToken = server.arg("gotifyToken");
+  input_gotifyAppToken = server.arg("gotifyAppToken");
+  input_gotifyClientToken = server.arg("gotifyClientToken");
 
 
   Serial.print("Gotify Host: ");
   Serial.println(input_gotifyHost);
-  Serial.print("Gotify Token: ");
-  Serial.println(input_gotifyToken);
+  Serial.print("Gotify App Token: ");
+  Serial.println(input_gotifyAppToken);
+  Serial.print("Gotify Client Token: ");
+  Serial.println(input_gotifyClientToken);
 
   strcpy(persistentData.gotifyHost, input_gotifyHost.c_str());
-  strcpy(persistentData.gotifyToken, input_gotifyToken.c_str());
+  strcpy(persistentData.gotifyAppToken, input_gotifyAppToken.c_str());
+  strcpy(persistentData.gotifyClientToken, input_gotifyClientToken.c_str());
 
   EEPROM.put(0, persistentData);
   EEPROM.commit();
   
-  server.send(200, "text/html", "Gotify configurado URL(\"" + input_gotifyHost + "\") Token(\"" + input_gotifyToken + "\")<br><a href=\"/\">Regresar al inicio</a>");
+  server.send(200, "text/html", "Gotify configurado URL(\"" + input_gotifyHost + "\") App Token(\"" + input_gotifyAppToken + "\") Client Token(\"" + input_gotifyClientToken + ")\"<br><a href=\"/\">Regresar al inicio</a>");
   delay(500);
   esp_restart();
 }

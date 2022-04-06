@@ -5,7 +5,8 @@ struct dataLayout
   char ssid[64];
   char password[64];
   char gotifyHost[64];
-  char gotifyToken[64];
+  char gotifyAppToken[32];
+  char gotifyClientToken[32];
   char sleepTime[6];
   char wakeupTime[6];
   uint16_t debugMode;
@@ -51,5 +52,5 @@ void setSleeping(){
 uint16_t getSleeping(){
   EEPROM.get(sizeof(persistentData) + 1, additional);
   if (additional.wifiTries == 65535)
-    additional.wifiTries == 0;
+    additional.wifiTries = 0;
 }

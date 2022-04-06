@@ -1,9 +1,3 @@
-const int trigPin2 = 5;
-const int echoPin2 = 18;
-
-const int trigPin1 = 2;
-const int echoPin1 = 4;
-
 float min_of_two(int x, int y) {
    return (x < y) ? x : y;
 }

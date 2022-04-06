@@ -1,36 +1,13 @@
 #include "EEPROM.h"
 #include <WebServer.h>
-#include <ArduinoWebsockets.h>
-#include <tiny_websockets/client.hpp>
 #include <WiFi.h>
 #include <UniversalTelegramBot.h>
 #include <Update.h>
 #include <ESPmDNS.h>
+#include <ArduinoWebsockets.h>
 
 using namespace websockets;
-
-void onMessageCallback(WebsocketsMessage message) {
-    Serial.print("Got Message: ");
-    Serial.println(message.data());
-}
-
-using namespace websockets;
-void onEventsCallback(WebsocketsEvent event, String data) {
-    if(event == WebsocketsEvent::ConnectionOpened) {
-        Serial.println("Connnection Opened");
-    } else if(event == WebsocketsEvent::ConnectionClosed) {
-        Serial.println("Connnection Closed");
-    } else if(event == WebsocketsEvent::GotPing) {
-        Serial.println("Got a Ping!");
-    } else if(event == WebsocketsEvent::GotPong) {
-        Serial.println("Got a Pong!");
-    }
-}
-
 WebsocketsClient wsclient;
-
-
-#define BUZZZER_PIN  18
 
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = -18000;
@@ -38,8 +15,9 @@ const long  gmtOffset_sec = -18000;
 String gotifyIP;
 UniversalTelegramBot *bot;
 
-unsigned long lastClientGotInTs;
-unsigned long lastClientGotOutTs;
+unsigned long lastPing;
+unsigned long lastPingPending;
+String wsconnected = "false";
 
 int operationMode = 0;
 int sleeping = 0;
@@ -52,21 +30,9 @@ WebServer server(80);
 
 void setup() {
   start = millis();
-  lastClientGotInTs = 0;
-  lastClientGotOutTs = 0;
-  pinMode(BUZZZER_PIN, OUTPUT); // Sets the trigPin as an Output
-
-  digitalWrite(BUZZZER_PIN, HIGH);
-  delay(300);
-  digitalWrite(BUZZZER_PIN, LOW);
-  delay(50);
-  digitalWrite(BUZZZER_PIN, HIGH);
-  delay(300);
-  digitalWrite(BUZZZER_PIN, LOW);
-  delay(50);
-  digitalWrite(BUZZZER_PIN, HIGH);
-  delay(300);
-  digitalWrite(BUZZZER_PIN, LOW);
+  lastPing = millis();
+  lastPingPending = millis();
+  pinMode(BUZZZER_PIN, OUTPUT);
   
   Serial.begin(115200);
 
@@ -97,7 +63,8 @@ void setup() {
   Serial.println("SSID read: " + String(persistentData.ssid));
   Serial.println("Password read: " + String(persistentData.password));
   Serial.println("Gotify URL read: " + String(persistentData.gotifyHost));
-  Serial.println("Gotify Token read: " + String(persistentData.gotifyToken));
+  Serial.println("Gotify App Token read: " + String(persistentData.gotifyAppToken));
+  Serial.println("Gotify Client Token read: " + String(persistentData.gotifyClientToken));
   Serial.println("Time to sleep read: " + String(persistentData.sleepTime));
   Serial.println("Time to wakeup read: " + String(persistentData.wakeupTime));
   Serial.println(persistentData.wakeUntilSleepSeconds);
@@ -106,7 +73,8 @@ void setup() {
   Serial.print("debugMode: ");
   Serial.println(persistentData.debugMode);
 
-  if (String(persistentData.ssid) != "" && String(persistentData.gotifyHost) != "" && String(persistentData.gotifyToken)) {
+  //Only app token is essencial to send messages(Advertise ip)
+  if (String(persistentData.ssid) != "" && String(persistentData.gotifyHost) != "" && String(persistentData.gotifyAppToken)) {
     int secondsPassed = 0;
     Serial.println("Wifi connecting.");
     WiFi.begin(persistentData.ssid, persistentData.password);              // Try to connect with the given SSID and PSS
@@ -140,32 +108,10 @@ void setup() {
       if(!MDNS.begin("espBuzzer")) {
         Serial.println("Error starting mDNS");
       }
-
-      gotifyIP = resolveServer(persistentData.gotifyHost);
-      if (gotifyIP == "")
-        esp_restart();
-
-      // run callback when messages are received
-      wsclient.onMessage(onMessageCallback);
-      
-      // run callback when events are occuring
-      wsclient.onEvent(onEventsCallback);
-    
-      // Connect to server
-      wsclient.setInsecure();
-      String wsURL = "ws://" + gotifyIP + ":80/stream?token=CZ2KYR.mSekO4HB";
-      bool connected = wsclient.connect(wsURL);
-      Serial.println("WS url: " + wsURL);
-      if (connected) 
-      {
-        Serial.println("Connected!");
-        String WS_msg = String("Hello to Server");
-        wsclient.send(WS_msg);
-      }
-      else 
-      {
-        Serial.println("Not Connected!");
-      }
+      if (!setupWebsocketClient())
+        Serial.println("WS client connection failed");
+      else
+        Serial.println("WS client connection succeed");
       notify("Usa esta direccion para configurar el dispositivo Buzzer: " + ip2Str(WiFi.localIP()));
     }
   }
@@ -209,11 +155,29 @@ void setup() {
 
 void loop() {
   unsigned long finish = millis();
+  if (operationMode == 1 && finish - lastPing >= 30 * 1000){
+    Serial.println("Checking heartbeat");
+    lastPing = millis();
+    if (wsconnected != "pending"){
+      lastPingPending = millis();
+      wsconnected = "pending";
+    }
+    wsclient.ping("");
+  }
+
+  if(operationMode == 1 && wsconnected == "pending" && finish - lastPingPending >= 5*1000){
+      wsconnected = "false";
+  }
   
   if (operationMode == 1 && !(finish - start >= persistentData.wakeUntilSleepSeconds * 1000 || sleeping)) {
     if (WiFi.status() == WL_CONNECTED) {
-        wsclient.poll();
-      delay(500);
+        if(wsconnected == "false") {
+          Serial.println("WS client disconnected... Retrying connection");
+          setupWebsocketClient(); 
+        } else {
+          wsclient.poll();
+          delay(500);
+        }
     } else {
       reconnect();
     }

@@ -8,3 +8,5 @@
 #define MESSAGING_SYSTEM 0 // 0 Gotify 1 Telegram
 
 #define WAKE_TIME_UNTIL_SLEEP_SECONDS 300
+
+#define BUZZZER_PIN  18

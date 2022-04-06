@@ -26,7 +26,7 @@ String SendHTML() {
   ptr += "<h2>Configuracion General</h2>\n";
   if (String(persistentData.ssid) == "") {
     ptr += "<h2>Configura el ssid de la red WiFi para activar la conexion al router</h2>\n";
-  } else if(String(persistentData.gotifyHost) == "" || String(persistentData.gotifyToken) == ""){
+  } else if(String(persistentData.gotifyHost) == "" || String(persistentData.gotifyAppToken) == ""){
     ptr += "<h2>Configura las notificaciones para activar la conexion al router</h2>\n";
   }
   ptr += "<br>\n";
@@ -80,8 +80,11 @@ String GotifyHTML(){
   ptr += "Host:Port de gotify:<br>\n";
   ptr += "<input type=\"text\" name=\"gotifyHost\" value=\"" + String(persistentData.gotifyHost) + "\"> \n";
   ptr += "<br>\n";
-  ptr += "Token de gotify:<br>\n";
-  ptr += "<input type=\"text\" name=\"gotifyToken\" value=\"" + String(persistentData.gotifyToken) + "\"> \n";
+  ptr += "App Token de gotify:<br>\n";
+  ptr += "<input type=\"text\" name=\"gotifyAppToken\" value=\"" + String(persistentData.gotifyAppToken) + "\"> \n";
+  ptr += "<br>\n";
+  ptr += "Client Token de gotify:<br>\n";
+  ptr += "<input type=\"text\" name=\"gotifyClientToken\" value=\"" + String(persistentData.gotifyClientToken) + "\"> \n";
   ptr += "<br><br>\n";
   ptr += "<input type=\"submit\" value=\"Submit\"> \n";
   ptr += "</form> \n";
