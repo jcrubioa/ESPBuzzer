@@ -21,31 +21,31 @@ void handle_WifiSubmit() {
   esp_restart();
 }
 
-void handle_GotifySubmit() {
-  String input_gotifyHost;
-  String input_gotifyAppToken;
-  String input_gotifyClientToken;
+void handle_NtfySubmit() {
+  String input_ntfyHost;
+  String input_ntfyAlertTopic;
+  String input_ntfyConfigTopic;
 
-  input_gotifyHost = server.arg("gotifyHost");
-  input_gotifyAppToken = server.arg("gotifyAppToken");
-  input_gotifyClientToken = server.arg("gotifyClientToken");
+  input_ntfyHost = server.arg("ntfyHost");
+  input_ntfyAlertTopic = server.arg("ntfyAlertTopic");
+  input_ntfyConfigTopic = server.arg("ntfyConfigTopic");
 
 
-  Serial.print("Gotify Host: ");
-  Serial.println(input_gotifyHost);
-  Serial.print("Gotify App Token: ");
-  Serial.println(input_gotifyAppToken);
-  Serial.print("Gotify Client Token: ");
-  Serial.println(input_gotifyClientToken);
+  Serial.print("Ntfy Host: ");
+  Serial.println(input_ntfyHost);
+  Serial.print("Ntfy Alert Topic: ");
+  Serial.println(input_ntfyAlertTopic);
+  Serial.print("Ntfy Config Topic: ");
+  Serial.println(input_ntfyConfigTopic);
 
-  strcpy(persistentData.gotifyHost, input_gotifyHost.c_str());
-  strcpy(persistentData.gotifyAppToken, input_gotifyAppToken.c_str());
-  strcpy(persistentData.gotifyClientToken, input_gotifyClientToken.c_str());
+  strcpy(persistentData.ntfyHost, input_ntfyHost.c_str());
+  strcpy(persistentData.ntfyAlertTopic, input_ntfyAlertTopic.c_str());
+  strcpy(persistentData.ntfyConfigTopic, input_ntfyConfigTopic.c_str());
 
   EEPROM.put(0, persistentData);
   EEPROM.commit();
   
-  server.send(200, "text/html", "Gotify configurado URL(\"" + input_gotifyHost + "\") App Token(\"" + input_gotifyAppToken + "\") Client Token(\"" + input_gotifyClientToken + ")\"<br><a href=\"/\">Regresar al inicio</a>");
+  server.send(200, "text/html", "Ntfy configurado Host(\"" + input_ntfyHost + "\") Alert Topic (\"" + input_ntfyAlertTopic + "\") Config Topic (\"" + input_ntfyConfigTopic + "\")<br><a href=\"/\">Regresar al inicio</a>");
   delay(500);
   esp_restart();
 }
@@ -122,9 +122,9 @@ void handle_OnWifi() {
   server.send(200, "text/html", WifiHTML());
 }
 
-void handle_OnGotify() {
+void handle_OnNtfy() {
   Serial.println("Client connected to Telegram conf");
-  server.send(200, "text/html", GotifyHTML());
+  server.send(200, "text/html", NtfyHTML());
 }
 
 void handle_OnTimer() {

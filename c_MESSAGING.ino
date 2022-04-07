@@ -22,12 +22,12 @@ void onEventsCallback(WebsocketsEvent event, String data) {
 }
 
 bool setupWebsocketClient(){
-  gotifyIP = resolveServer(persistentData.gotifyHost);
-  if (gotifyIP == "")
+  ntfyIP = resolveServer(persistentData.ntfyHost);
+  if (ntfyIP == "")
     esp_restart();
   
-  String websockets_server_host = "ws://" + gotifyIP + "/stream?token=" + String(persistentData.gotifyClientToken);
-  String origin = "http://" + gotifyIP;
+  String websockets_server_host = "ws://" + ntfyIP + "/" + persistentData.ntfyAlertTopic + "/ws";
+  String origin = "http://" + ntfyIP;
   const uint16_t websockets_server_port = 80; // Enter server port
 
   wsclient.onEvent(onEventsCallback);
@@ -35,7 +35,7 @@ bool setupWebsocketClient(){
   wsclient.onMessage([&](WebsocketsMessage message){
     DynamicJsonDocument doc(1024);
     deserializeJson(doc, message.data().c_str());
-    const char* value = doc["message"];
+    const char* value = doc["title"];
     Serial.print("Got Message: ");
     Serial.println(message.data());
     Serial.print("message value: ");
@@ -79,11 +79,19 @@ String resolveServer(String hostname){
   return "";
 }
 
-void message_to_gotify(String message)
+void messageToNtfy(String title, String message, String onClick, String topic, String tags, int priority)
 {
   if (sleeping == 0){
-    String url = "http://" + gotifyIP + "/message?token=" + String(persistentData.gotifyAppToken);
-    String body = "{\"message\":\"" + message + "\",\"priority\":10, \"title\":\"Atencion\"}";
+    String url = "http://" + ntfyIP + "/";
+    String body = "{";
+      body += "\"title\":\"" + title + "\",";
+      body += "\"message\":\"" + message + "\",";
+      body += "\"topic\":\"" + topic + "\",";
+      body += "\"tags\":" + tags + ",";
+      body += "\"priority\":" + String(priority);
+    if (onClick != "")
+      body += ",\"click\":\"" + onClick + "\"";
+    body += "}";
     http.begin(url);  
     http.addHeader("Content-Type", "application/json");
     int httpResponseCode = http.POST(body);
@@ -101,7 +109,7 @@ void message_to_gotify(String message)
     Serial.print("HTTP Response: ");
     Serial.println(response);
     if (httpResponseCode < 0)
-      gotifyIP = resolveServer(persistentData.gotifyHost);
+      ntfyIP = resolveServer(persistentData.ntfyHost);
     // Free resources
     http.end();
   } else {
@@ -109,7 +117,16 @@ void message_to_gotify(String message)
   }
 }
 
-void notify(String message){
+void notify(String title, String message, String onClick, String topic, String tags, int priority){
   if (MESSAGING_SYSTEM == 0)
-    message_to_gotify(message);
+    messageToNtfy(title, message, onClick, topic, tags, priority);
+}
+
+void notifyDeviceReady(){
+  notify("Dispositivo de alarma remota activado", 
+    "Usa esta direccion para configurar el dispositivo: http://" + ip2Str(WiFi.localIP()), 
+    "http://" + ip2Str(WiFi.localIP()), 
+    "config",
+    "[\"battery\", \"gear\"]", 
+    3);
 }

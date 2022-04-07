@@ -26,14 +26,14 @@ String SendHTML() {
   ptr += "<h2>Configuracion General</h2>\n";
   if (String(persistentData.ssid) == "") {
     ptr += "<h2>Configura el ssid de la red WiFi para activar la conexion al router</h2>\n";
-  } else if(String(persistentData.gotifyHost) == "" || String(persistentData.gotifyAppToken) == ""){
+  } else if(String(persistentData.ntfyHost) == "" || String(persistentData.ntfyConfigTopic) == ""){
     ptr += "<h2>Configura las notificaciones para activar la conexion al router</h2>\n";
   }
   ptr += "<br>\n";
   ptr += "<br>\n";
   ptr += "<a href=\"/wifi\">Configurar red WiFi</a> \n";
   ptr += "<br>\n";
-  ptr += "<a href=\"/gotify\">Configurar Notificaciones</a> \n";
+  ptr += "<a href=\"/ntfy\">Configurar Notificaciones</a> \n";
   ptr += "<br>\n";
   ptr += "<a href=\"/timer\">Configurar Temporizador</a> \n";
   ptr += "<br>\n";
@@ -73,18 +73,18 @@ String WifiHTML(){
   return ptr;
 }
 
-String GotifyHTML(){
+String NtfyHTML(){
   String ptr = "<!DOCTYPE HTML><html><body>\n";
-  ptr += "<h2>Configuracion de Gotify</h2>\n";
-  ptr += "<form action=\"/gotify/get\"> \n";
-  ptr += "Host:Port de gotify:<br>\n";
-  ptr += "<input type=\"text\" name=\"gotifyHost\" value=\"" + String(persistentData.gotifyHost) + "\"> \n";
+  ptr += "<h2>Configuracion de ntfy</h2>\n";
+  ptr += "<form action=\"/ntfy/get\"> \n";
+  ptr += "Host:Port de ntfy:<br>\n";
+  ptr += "<input type=\"text\" name=\"ntfyHost\" value=\"" + String(persistentData.ntfyHost) + "\"> \n";
   ptr += "<br>\n";
-  ptr += "App Token de gotify:<br>\n";
-  ptr += "<input type=\"text\" name=\"gotifyAppToken\" value=\"" + String(persistentData.gotifyAppToken) + "\"> \n";
+  ptr += "Ntfy canal de alertas:<br>\n";
+  ptr += "<input type=\"text\" name=\"ntfyAlertTopic\" value=\"" + String(persistentData.ntfyAlertTopic) + "\"> \n";
   ptr += "<br>\n";
-  ptr += "Client Token de gotify:<br>\n";
-  ptr += "<input type=\"text\" name=\"gotifyClientToken\" value=\"" + String(persistentData.gotifyClientToken) + "\"> \n";
+  ptr += "Ntfy canal de configuracion:<br>\n";
+  ptr += "<input type=\"text\" name=\"ntfyConfigTopic\" value=\"" + String(persistentData.ntfyConfigTopic) + "\"> \n";
   ptr += "<br><br>\n";
   ptr += "<input type=\"submit\" value=\"Submit\"> \n";
   ptr += "</form> \n";

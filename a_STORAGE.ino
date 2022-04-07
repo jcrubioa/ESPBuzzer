@@ -4,9 +4,9 @@ struct dataLayout
 {
   char ssid[64];
   char password[64];
-  char gotifyHost[64];
-  char gotifyAppToken[32];
-  char gotifyClientToken[32];
+  char ntfyHost[64];
+  char ntfyAlertTopic[16];
+  char ntfyConfigTopic[16];
   char sleepTime[6];
   char wakeupTime[6];
   uint16_t debugMode;

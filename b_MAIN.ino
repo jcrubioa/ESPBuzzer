@@ -12,7 +12,7 @@ WebsocketsClient wsclient;
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = -18000;
 
-String gotifyIP;
+String ntfyIP;
 UniversalTelegramBot *bot;
 
 unsigned long lastPing;
@@ -62,9 +62,9 @@ void setup() {
   setDefaults(&persistentData);
   Serial.println("SSID read: " + String(persistentData.ssid));
   Serial.println("Password read: " + String(persistentData.password));
-  Serial.println("Gotify URL read: " + String(persistentData.gotifyHost));
-  Serial.println("Gotify App Token read: " + String(persistentData.gotifyAppToken));
-  Serial.println("Gotify Client Token read: " + String(persistentData.gotifyClientToken));
+  Serial.println("Ntfy Host read: " + String(persistentData.ntfyHost));
+  Serial.println("Ntfy Alerts Topic read: " + String(persistentData.ntfyAlertTopic));
+  Serial.println("Ntfy Config Topic read: " + String(persistentData.ntfyConfigTopic));
   Serial.println("Time to sleep read: " + String(persistentData.sleepTime));
   Serial.println("Time to wakeup read: " + String(persistentData.wakeupTime));
   Serial.println(persistentData.wakeUntilSleepSeconds);
@@ -74,7 +74,7 @@ void setup() {
   Serial.println(persistentData.debugMode);
 
   //Only app token is essencial to send messages(Advertise ip)
-  if (String(persistentData.ssid) != "" && String(persistentData.gotifyHost) != "" && String(persistentData.gotifyAppToken)) {
+  if (String(persistentData.ssid) != "" && String(persistentData.ntfyHost) != "" && String(persistentData.ntfyConfigTopic)) {
     int secondsPassed = 0;
     Serial.println("Wifi connecting.");
     WiFi.begin(persistentData.ssid, persistentData.password);              // Try to connect with the given SSID and PSS
@@ -112,7 +112,7 @@ void setup() {
         Serial.println("WS client connection failed");
       else
         Serial.println("WS client connection succeed");
-      notify("Usa esta direccion para configurar el dispositivo Buzzer: " + ip2Str(WiFi.localIP()));
+      notifyDeviceReady();
     }
   }
   if (operationMode == 0) {
@@ -133,10 +133,10 @@ void setup() {
   server.on("/", handle_OnConnect);
   server.on("/wifi", handle_OnWifi);
   server.on("/timer", handle_OnTimer);
-  server.on("/gotify", handle_OnGotify);
+  server.on("/ntfy", handle_OnNtfy);
   server.on("/wifi/get", handle_WifiSubmit);
   server.on("/timer/get", handle_TimerSubmit);
-  server.on("/gotify/get", handle_GotifySubmit);
+  server.on("/ntfy/get", handle_NtfySubmit);
   server.on("/devicePropertiesHTML", handle_OnDeviceProperties);
   server.on("/deviceProperties/get", handle_DevicePropertiesSubmit);
   server.on("/clearEEPROM", handle_ClearEEPROMHome);
