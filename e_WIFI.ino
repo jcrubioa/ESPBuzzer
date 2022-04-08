@@ -1,26 +1,3 @@
-
-String ip2Str(IPAddress ip){
-  String s="";
-  for (int i=0; i<4; i++) {
-    s += i  ? "." + String(ip[i]) : String(ip[i]);
-  }
-  return s;
-}
-
-bool reconnect(){
-  int WIFI_RECONNECT_TIMEOUT_LOOPS = 10;
-  int loopsPassed = 0;
-  while (WiFi.status() != WL_CONNECTED && loopsPassed < WIFI_RECONNECT_TIMEOUT_LOOPS) {  // Wait until WiFi is connected or timeout
-    Serial.println("Reconnecting to WiFi...");
-    Serial.print(".");
-    WiFi.disconnect();
-    WiFi.reconnect();
-    delay(10000);
-    loopsPassed++;
-  }
-  return WiFi.status() == WL_CONNECTED;
-}
-
 String SendHTML() {
   String ptr = "<!DOCTYPE HTML><html><body>\n";
   ptr += "<h2>Configuracion General</h2>\n";

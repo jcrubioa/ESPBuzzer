@@ -13,6 +13,7 @@ const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = -18000;
 
 String ntfyIP;
+
 UniversalTelegramBot *bot;
 
 unsigned long lastPing;
@@ -105,14 +106,17 @@ void setup() {
       Serial.println("Connected to the WiFi network"); // Print wifi connect message
       Serial.println(WiFi.localIP());
       configTime(gmtOffset_sec, 0, ntpServer);
-      if(!MDNS.begin("espBuzzer")) {
+      if(!MDNS.begin("esp_buzzer")) {
         Serial.println("Error starting mDNS");
       }
-      if (!setupWebsocketClient())
+      ntfyIP = resolveServer(persistentData.ntfyHost);
+      if (ntfyIP == "")
+        esp_restart();
+      if (!setupWebsocketClient(ntfyIP))
         Serial.println("WS client connection failed");
       else
         Serial.println("WS client connection succeed");
-      notifyDeviceReady();
+      notifyDeviceReady("esp_buzzer");
     }
   }
   if (operationMode == 0) {
@@ -173,7 +177,7 @@ void loop() {
     if (WiFi.status() == WL_CONNECTED) {
         if(wsconnected == "false") {
           Serial.println("WS client disconnected... Retrying connection");
-          setupWebsocketClient(); 
+          setupWebsocketClient(ntfyIP); 
         } else {
           wsclient.poll();
           delay(500);
