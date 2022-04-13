@@ -9,6 +9,8 @@
 using namespace websockets;
 WebsocketsClient wsclient;
 
+int wifiStatus;
+
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = -18000;
 
@@ -16,6 +18,7 @@ String ntfyIP;
 
 UniversalTelegramBot *bot;
 
+unsigned long lastWiFiCheck;
 unsigned long lastPing;
 unsigned long lastPingPending;
 String wsconnected = "false";
@@ -31,6 +34,7 @@ WebServer server(80);
 
 void setup() {
   start = millis();
+  lastWiFiCheck = millis();
   lastPing = millis();
   lastPingPending = millis();
   pinMode(BUZZZER_PIN, OUTPUT);
@@ -74,6 +78,7 @@ void setup() {
   Serial.print("debugMode: ");
   Serial.println(persistentData.debugMode);
 
+  setupI2C();
   //Only app token is essencial to send messages(Advertise ip)
   if (String(persistentData.ssid) != "" && String(persistentData.ntfyHost) != "" && String(persistentData.ntfyConfigTopic)) {
     int secondsPassed = 0;
@@ -96,6 +101,7 @@ void setup() {
         esp_restart();
       }
       operationMode = 0;
+      wifiStatus = WiFi.status();
       Serial.println();
       Serial.println("Couldn't connect to wifi. Restart device or configure another network");
     } else {
@@ -158,8 +164,8 @@ void setup() {
 }
 
 void loop() {
-  unsigned long finish = millis();
-  if (operationMode == 1 && finish - lastPing >= 30 * 1000){
+  unsigned long now = millis();
+  if (operationMode == 1 && now - lastPing >= 30 * 1000){
     Serial.println("Checking heartbeat");
     lastPing = millis();
     if (wsconnected != "pending"){
@@ -169,11 +175,11 @@ void loop() {
     wsclient.ping("");
   }
 
-  if(operationMode == 1 && wsconnected == "pending" && finish - lastPingPending >= 5*1000){
+  if(operationMode == 1 && wsconnected == "pending" && now - lastPingPending >= 5*1000){
       wsconnected = "false";
   }
   
-  if (operationMode == 1 && !(finish - start >= persistentData.wakeUntilSleepSeconds * 1000 || sleeping)) {
+  if (operationMode == 1 && !(now - start >= persistentData.wakeUntilSleepSeconds * 1000 || sleeping)) {
     if (WiFi.status() == WL_CONNECTED) {
         if(wsconnected == "false") {
           Serial.println("WS client disconnected... Retrying connection");
@@ -185,7 +191,7 @@ void loop() {
     } else {
       reconnect();
     }
-  } else if (operationMode == 1 && (finish - start >= persistentData.wakeUntilSleepSeconds * 1000 || sleeping)) {
+  } else if (operationMode == 1 && (now - start >= persistentData.wakeUntilSleepSeconds * 1000 || sleeping)) {
     Serial.println("Fetching current time and checking time to sleep");
     start = millis();
     timeData times;
@@ -208,6 +214,9 @@ void loop() {
       esp_deep_sleep_start();
     }
   } else {
+    if (WiFi.status() != WL_CONNECT_FAILED && now - lastWiFiCheck >= 15 * 1000){
+      checkAndReconnect();
+    }
     delay(1000);
   }
   server.handleClient();

@@ -35,3 +35,17 @@ bool reconnect(){
   }
   return WiFi.status() == WL_CONNECTED;
 }
+
+void checkAndReconnect(){
+  int n = WiFi.scanNetworks();
+  if (n == 0) {
+      Serial.println("No networks found");
+  } else {
+    for (int i = 0; i < n; ++i) {
+      if (WiFi.SSID(i) == persistentData.ssid){
+        Serial.println("Configured network is reachable. Restarting...");
+        esp_restart();
+      }
+    }
+  }
+}
